@@ -6,11 +6,11 @@ class NoteDatabase:
     def __init__(self, conn):
         self.db = conn
 
-    def createTables(self, db):
+    def create_tables(self, db):
         with db:
             db.execute("""
             CREATE TABLE IF NOT EXISTS note
-            (id INTEGER PRIMARY KEY,
+            (note_id INTEGER PRIMARY KEY,
             title TEXT,
             text TEXT,
             date_created TEXT,
@@ -18,12 +18,12 @@ class NoteDatabase:
 
             db.execute("""
             CREATE TABLE IF NOT EXISTS tag
-            (id INTEGER PRIMARY KEY,
+            (tag_id INTEGER PRIMARY KEY,
             name TEXT)""")
 
             db.execute("""
             CREATE TABLE IF NOT EXISTS tagmap
-            (id INTEGER PRIMARY KEY,
+            (tagmap_id INTEGER PRIMARY KEY,
             note_id INTEGER,
             tag_id INTEGER,
             FOREIGN KEY(note_id) REFERENCES note(id),
@@ -37,7 +37,7 @@ class NoteDatabase:
                 (title, text, date, date)).lastrowid
 
             for tag in tags:
-                tag_id = conn.execute("SELECT id FROM tag WHERE name = ?",
+                tag_id = conn.execute("SELECT tag_id FROM tag WHERE name = ?",
                                       (tag, )).fetchone()
                 if (not tag_id):
                     with conn:
@@ -55,5 +55,8 @@ class NoteDatabase:
 
     def delete_note(self, conn, id):
         with conn:
-            conn.execute("DELETE FROM note WHERE id = ? ", (id, ))
+            conn.execute("DELETE FROM note WHERE note_id = ? ", (id, ))
             conn.execute("DELETE FROM tagmap WHERE note_id = ?", (id, ))
+
+    def update_note(self, conn, id, title, text, tags):
+        pass
