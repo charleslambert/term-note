@@ -24,14 +24,8 @@ def test_createTables(conn, note_db):
             .fetchall() == [("note", ), ("tag", ), ("tagmap", )])
 
 
-def test_add_note_no_tags(conn, note_db):
-    note_db.add_note(conn, "stuff", "things")
-    assert (conn.execute("SELECT title FROM note WHERE title= 'stuff'")
-            .fetchone() == ("stuff", ))
-
-
 def test_add_note_with_tags(conn, note_db):
-    note_id = note_db.add_note(conn, "stuff2", "things", ["tags", "moreTags"])
+    note_id = note_db.add_note(conn, "stuff", "things", ["tags", "moreTags"])
     assert (conn.execute("SELECT id FROM note WHERE id= ?;", (note_id, ))
             .fetchone() == (note_id, ))
     assert (conn.execute("SELECT name FROM tag").fetchall() == [
@@ -47,7 +41,7 @@ def test_add_note_with_tags(conn, note_db):
 
 
 def test_add_note_with_existing_tags(conn, note_db):
-    note_id = note_db.add_note(conn, "stuff3", "things", ["tags", "moreTags"])
+    note_id = note_db.add_note(conn, "stuff2", "things", ["tags", "moreTags"])
     assert (conn.execute("""SELECT id FROM note WHERE id = ?;""", (note_id, ))
             .fetchone() == (note_id, ))
     assert (conn.execute("""SELECT name FROM tag""").fetchall() == [
