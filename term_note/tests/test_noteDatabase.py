@@ -26,39 +26,45 @@ def test_createTables(conn, note_db):
 
 def test_add_note_no_tags(conn, note_db):
     note_db.add_note(conn, "stuff", "things")
-    assert (conn.execute("""SELECT title FROM note WHERE title= "stuff";""")
+    assert (conn.execute("SELECT title FROM note WHERE title= 'stuff'")
             .fetchone() == ("stuff", ))
 
 
 def test_add_note_with_tags(conn, note_db):
-    note_db.add_note(conn, "stuff2", "things", ["tags", "moreTags"])
-    assert (conn.execute("""SELECT title FROM note WHERE title= "stuff2";""")
-            .fetchone() == ("stuff2", ))
-    assert (conn.execute("""SELECT name FROM tag""").fetchall() == [
+    note_id = note_db.add_note(conn, "stuff2", "things", ["tags", "moreTags"])
+    assert (conn.execute("SELECT id FROM note WHERE id= ?;", (note_id, ))
+            .fetchone() == (note_id, ))
+    assert (conn.execute("SELECT name FROM tag").fetchall() == [
         ("tags", ), ("moreTags", )
     ])
 
-    note_id = conn.execute(
-        """SELECT id FROM note WHERE title = 'stuff2'""").fetchone()
-    tag_ids = list(
-        map(lambda x: x[0], conn.execute("""SELECT id FROM tag""").fetchall()))
-    tagmap = [(note_id[0], tag_ids[0]), (note_id[0], tag_ids[1])]
-    assert (conn.execute("""SELECT note_id, tag_id FROM tagmap WHERE note_id = ?""", note_id).fetchall()
-            == tagmap)
+    tag_ids = map(lambda x: x[0],
+                  conn.execute("SELECT id FROM tag").fetchall())
+    tagmap = list(map(lambda x: (note_id, x), tag_ids))
+    assert (conn.execute(
+        "SELECT note_id, tag_id FROM tagmap WHERE note_id = ?",
+        (note_id, )).fetchall() == tagmap)
 
 
 def test_add_note_with_existing_tags(conn, note_db):
-    note_db.add_note(conn, "stuff3", "things", ["tags", "moreTags"])
-    assert (conn.execute("""SELECT title FROM note WHERE title= "stuff3";""")
-            .fetchone() == ("stuff3", ))
+    note_id = note_db.add_note(conn, "stuff3", "things", ["tags", "moreTags"])
+    assert (conn.execute("""SELECT id FROM note WHERE id = ?;""", (note_id, ))
+            .fetchone() == (note_id, ))
     assert (conn.execute("""SELECT name FROM tag""").fetchall() == [
         ("tags", ), ("moreTags", )
     ])
 
-    note_id = conn.execute(
-        """SELECT id FROM note WHERE title = 'stuff3'""").fetchone()
-    tag_ids = list(
-        map(lambda x: x[0], conn.execute("""SELECT id FROM tag""").fetchall()))
-    tagmap = [(note_id[0], tag_ids[0]), (note_id[0], tag_ids[1])]
-    assert (conn.execute("""SELECT note_id, tag_id FROM tagmap WHERE note_id = ?""", note_id).fetchall()
-            == tagmap)
+    tag_ids = map(lambda x: x[0],
+                  conn.execute("""SELECT id FROM tag""").fetchall())
+    tagmap = list(map(lambda x: (note_id, x), tag_ids))
+    assert (conn.execute(
+        """SELECT note_id, tag_id FROM tagmap WHERE note_id = ?""",
+        (note_id, )).fetchall() == tagmap)
+
+
+def test_delete_note(conn, note_db):
+    note_db.delete_note(conn, 2)
+    assert (conn.execute("SELECT id FROM note WHERE id = ?",
+                         (2, )).fetchone() == None)
+    assert (conn.execute("SELECT note_id FROM tagmap WHERE note_id = ?",
+                         (2, )).fetchall() == [])

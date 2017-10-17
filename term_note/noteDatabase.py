@@ -51,3 +51,9 @@ class NoteDatabase:
                     conn.execute(
                         "INSERT INTO tagmap (note_id, tag_id) VALUES(?,?)",
                         (note_id, tag_id))
+        return note_id
+
+    def delete_note(self, conn, id):
+        with conn:
+            conn.execute("DELETE FROM note WHERE id = ? ", (id, ))
+            conn.execute("DELETE FROM tagmap WHERE note_id = ?", (id, ))
