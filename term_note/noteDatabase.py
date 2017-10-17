@@ -2,14 +2,13 @@ import sqlite3
 import datetime
 
 
-class noteDatabase:
-    def __init__(self, filename="term_note.db"):
-        self.db = sqlite3.connect(filename)
-        self.create_tables(self.db)
+class NoteDatabase:
+    def __init__(self, conn):
+        self.db = conn
 
-    def create_tables(self, db):
-        with db as cursor:
-            cursor.execute("""
+    def createTables(self, db):
+        with db:
+            db.execute("""
             CREATE TABLE IF NOT EXISTS note
             (id INTEGER PRIMARY KEY,
             title TEXT,
@@ -17,12 +16,12 @@ class noteDatabase:
             date_created TEXT,
             date_modified TEXT)""")
 
-            cursor.execute("""
+            db.execute("""
             CREATE TABLE IF NOT EXISTS tag
             (id INTEGER PRIMARY KEY,
             name TEXT)""")
 
-            cursor.execute("""
+            db.execute("""
             CREATE TABLE IF NOT EXISTS tagmap
             (id INTEGER PRIMARY KEY,
             note_id INTEGER,
@@ -30,27 +29,25 @@ class noteDatabase:
             FOREIGN KEY(note_id) REFERENCES note(id),
             FOREIGN KEY(tag_id) REFERENCES tag(id))""")
 
-    def add_note(self, title, text, tags=[]):
+    def add_note(self, conn, title, text, tags=[]):
         date = datetime.datetime.now()
-        tag_ids = []
-        with self.db as c:
-            c.execute(
+        with conn:
+            note_id = conn.execute(
                 "INSERT INTO note (title, text, date_created, date_modified) VALUES(?,?,?,?)",
-                (title, text, date, date))
+                (title, text, date, date)).lastrowid
 
             for tag in tags:
-                cur = c.execute("SELECT id FROM tag WHERE name = ?", (tag,))
-                # print( cur, tag)
-                if(not cur.fetchone()):
-                    c.execute("INSERT INTO tag (name) VALUES(?)", (tag,))
+                tag_id = conn.execute("SELECT id FROM tag WHERE name = ?",
+                                      (tag, )).fetchone()
+                if (not tag_id):
+                    with conn:
+                        tag_id = conn.execute(
+                            "INSERT INTO tag (name) VALUES(?)",
+                            (tag, )).lastrowid
+                else:
+                    tag_id = tag_id[0]
 
-
-    def pull(self):
-        cursor = self.db.cursor()
-        cursor.execute("SELECT * FROM tag")
-        a = cursor.fetchall()
-        return a
-
-
-db = noteDatabase()
-db.add_note("Test", "Something", ['stuff', 'things', 'trifal'])
+                with conn:
+                    conn.execute(
+                        "INSERT INTO tagmap (note_id, tag_id) VALUES(?,?)",
+                        (note_id, tag_id))
