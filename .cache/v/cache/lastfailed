@@ -1,1 +1,3 @@
-{}
+{
+  "term_note/tests/test_noteDatabase.py::test_add_note_with_existing_tags": true
+}

@@ -42,6 +42,9 @@ def test_add_note_with_tags(conn, note_db):
 
 def test_add_note_with_existing_tags(conn, note_db):
     note_id = note_db.add_note(conn, "stuff2", "things", ["tags", "moreTags"])
+
+    print(conn.execute("SELECT note_id FROM note NATURAL join (tagmap NATURAL join tag) WHERE note_id = ?", (note_id,)))
+
     assert (conn.execute("""SELECT note_id FROM note WHERE note_id = ?;""", (note_id, ))
             .fetchone() == (note_id, ))
     assert (conn.execute("""SELECT name FROM tag""").fetchall() == [
