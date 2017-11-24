@@ -1,4 +1,4 @@
 {
   "fiddlingAround/test_urwid.py": true,
-  "tests/test_noteDatabase.py::test_add_note_with_tags": true
+  "tests/test_noteDatabase.py::test_update_note": true
 }
