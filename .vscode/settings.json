@@ -1,0 +1,10 @@
+{
+    "python.pythonPath": "${workspaceRoot}/env/bin/python3",
+    "python.unitTest.pyTestArgs": [
+        "term_note"
+    ],
+    "python.unitTest.pyTestEnabled": false,
+    "python.unitTest.promptToConfigure": false,
+    "python.unitTest.unittestEnabled": false,
+    "python.unitTest.nosetestsEnabled": false
+}

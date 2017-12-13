@@ -10,3 +10,7 @@ Thumbs.db
 /dist/
 /.idea/
 /.venv/
+cov.xml
+.mypy_cache
+.cache
+.coverage
