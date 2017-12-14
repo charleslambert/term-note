@@ -13,13 +13,13 @@ class NoteDatabase:
         self.note = Table('note',
                           metadata,
                           Column('id', Integer, primary_key=True),
-                          Column('title', String(30)),
-                          Column('text', String(200)),
+                          Column('title', String),
+                          Column('text', String),
                           Column('date_created', DateTime),
                           Column('date_modified', DateTime))
         self.tag = Table('tag',
                          metadata,
-                         Column('id', Integer, primary_key=True, autoincrement=False),
+                         Column('id', Integer, primary_key=True),
                          Column('name', String))
         self.tagmap = Table('tagmap',
                             metadata,
@@ -32,11 +32,51 @@ class NoteDatabase:
             tags = []
 
         with self.engine.begin() as conn:
-            result = conn.execute(self.note.insert(), title=title, text=text,
-                              date_created=datetime.now(), date_modified=datetime.now())
+            ins = self.note.insert()
+            result = conn.execute(ins, title=title, text=text,
+                                  date_created=datetime.now(),
+                                  date_modified=datetime.now())
+            id = result.inserted_primary_key[0]
 
-            return result.inserted_primary_key[0]
+        tag_ids = self.add_tags(tags)
+        self.add_tagmaps(id, tag_ids)
 
+        return id
+
+    def add_tags(self, tags):
+        """Add tags to db
+
+        Take tags given and add them to the db
+
+        Arguments:
+            tags {list(string)} -- The tag names to be added
+
+        Returns:
+            list(int) -- The ids of all inserted tags
+        """
+        with self.engine.begin() as conn:
+            ins = self.tag.insert()
+            tag_ids = []
+            for tag in tags:
+                tag_ids.append(conn.execute(
+                    ins, name=tag).inserted_primary_key[0])
+        return tag_ids
+
+    def add_tagmaps(self, id, tag_ids):
+        """Add tagmaps to db
+
+        Add the link between note and tags
+
+        Arguments:
+            id {int} -- The id of the note to be linked
+            tag_ids {list(int)} -- The ids of tags to be linked
+        """
+        tagmaps = map(lambda tag_id: {"note_id": id, "tag_id": tag_id},
+                      tag_ids)
+
+        with self.engine.begin() as conn:
+            ins = self.tagmap.insert()
+            conn.execute(ins, list(tagmaps))
 
     # def add_tags(self, note_id, tags):
     #     for tag in tags:
