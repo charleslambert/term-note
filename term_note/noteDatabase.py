@@ -1,5 +1,6 @@
 from datetime import datetime
-from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData, ForeignKey, DateTime, select, func
+from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData, ForeignKey, DateTime
+from sqlalchemy import select, func
 
 
 class NoteDatabase:
@@ -15,8 +16,8 @@ class NoteDatabase:
                           Column('id', Integer, primary_key=True),
                           Column('title', String),
                           Column('text', String),
-                          Column('date_created', DateTime),
-                          Column('date_modified', DateTime))
+                          Column('created', DateTime),
+                          Column('modified', DateTime))
         self.tag = Table('tag',
                          metadata,
                          Column('id', Integer, primary_key=True),
@@ -34,8 +35,8 @@ class NoteDatabase:
         with self.engine.begin() as conn:
             ins = self.note.insert()
             result = conn.execute(ins, title=title, text=text,
-                                  date_created=datetime.now(),
-                                  date_modified=datetime.now())
+                                  created=datetime.now(),
+                                  modified=datetime.now())
             id = result.inserted_primary_key[0]
 
         tag_ids = self.add_tags(tags)
@@ -78,36 +79,32 @@ class NoteDatabase:
             ins = self.tagmap.insert()
             conn.execute(ins, list(tagmaps))
 
-    # def add_tags(self, note_id, tags):
-    #     for tag in tags:
-    #         tag_id = self.db_con.execute(
-    #             "SELECT tag_id FROM tag WHERE name = ?", (tag, )).fetchone()
-    #         if (not tag_id):
-    #             with self.db_con as con:
-    #                 tag_id = con.execute("INSERT INTO tag (name) VALUES(?)",
-    #                                      (tag, )).lastrowid
-    #         else:
-    #             tag_id = tag_id[0]
+    def delete(self, id):
+        """Delete a note
 
-    #         with self.db_con as con:
-    #             con.execute("INSERT INTO tagmap (note_id, tag_id) VALUES(?,?)",
-    #                         (note_id, tag_id))
+        Delete a note and any tagmaps related
 
-    # def add_note(self, title, text, tags=[]):
-    #     date = datetime.datetime.now()
-    #     with self.db_con as con:
-    #         note_id = con.execute(
-    #             "INSERT INTO note (title, text, date_created, date_modified) VALUES(?,?,?,?)",
-    #             (title, text, date, date)).lastrowid
+        Arguments:
+            id {int} -- The id of the note
+        """
+        with self.engine.begin() as conn:
+            d = self.tagmap.delete().where(self.tagmap.c.note_id == id)
+            conn.execute(d)
 
-    #         self.add_tags(note_id, tags)
+        with self.engine.begin() as conn:
+            d = self.note.delete().where(self.note.c.id == id)
+            conn.execute(d)
 
-    #     return note_id
+    def update(self, id, **kwargs):
+        """Update a note
 
-    # def delete_note(self, id):
-    #     with self.db_con as con:
-    #         con.execute("DELETE FROM note WHERE note_id = ? ", (id, ))
-    #         con.execute("DELETE FROM tagmap WHERE note_id = ?", (id, ))
+        [description]
 
-    # def update_note(self, id, title, text, tags):
-    #     pass
+        Arguments:
+            id {int} -- The id of the note to update
+            **kwargs -- The fields to be updated
+        """
+        with self.engine.begin() as conn:
+            u = self.note.update().where(self.note.c.id == id)
+            conn.execute(u, kwargs)
+

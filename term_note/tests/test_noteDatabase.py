@@ -79,34 +79,46 @@ def test_add_note_with_tags(note_db, engine):
             (2, 3)] == tagmaps_result)
 
 
-# def test_add_note_with_existing_tags(conn, note_db):
-#     note_id = note_db.add_note("stuff2", "things", ["tags", "moreTags"])
+def test_delete_note(note_db, engine):
+    note = note_db.note.insert()
+    tag = note_db.tag.insert()
+    tagmap = note_db.tagmap.insert()
 
-#     assert (conn.execute("""SELECT note.note_id, tag.name FROM note
-#         JOIN (tagmap JOIN tag ON tagmap.tag_id = tag.tag_id)
-#         ON note.note_id = tagmap.note_id
-#         WHERE note.note_id = ?""",
-#                          (note_id, )).fetchall() == [(note_id, "tags"),
-#                                                      (note_id, "moreTags")])
+    with engine.begin() as conn:
+        conn.execute(note, id=1, title="hello",
+                     text="world",
+                     created=datetime(1, 1, 1),
+                     modified=datetime(1, 1, 1))
+        conn.execute(tag, [{"id": 1, "name": "tag1"},
+                           {"id": 2, "name": "tag2"}])
+        conn.execute(tagmap, [{"note_id": 1, "tag_id": 1},
+                              {"note_id": 1, "tag_id": 2}])
+    note_db.delete(1)
+    notes, tags, tagmaps = get_all_data(engine, note_db)
+    assert([] == notes)
+    assert([(1, "tag1"),
+            (2, "tag2")] == tags)
+    assert([] == tagmaps)
 
 
-# def test_delete_note(conn, note_db):
-#     note_db.delete_note(2)
-#     assert (conn.execute("SELECT note_id FROM note WHERE note_id = ?",
-#                          (2, )).fetchone() is None)
-#     assert (conn.execute("SELECT note_id FROM tagmap WHERE note_id = ?",
-#                          (2, )).fetchall() == [])
+def test_update_note(note_db, engine):
+    note = note_db.note.insert()
+    tag = note_db.tag.insert()
+    tagmap = note_db.tagmap.insert()
 
+    with engine.begin() as conn:
+        conn.execute(note, id=1, title="hello",
+                     text="world",
+                     created=datetime(1, 1, 1),
+                     modified=datetime(1, 1, 1))
+        conn.execute(tag, [{"id": 1, "name": "tag1"},
+                           {"id": 2, "name": "tag2"}])
+        conn.execute(tagmap, [{"note_id": 1, "tag_id": 1},
+                              {"note_id": 1, "tag_id": 2}])
 
-# # def test_update_note(conn, note_db):
-# #     note_id = 1
-# #     note_db.update_note(note_id, "not stuff", "not things",
-# #                         ["tags", "lessTags"])
-# #     assert (conn.execute(
-# #         """SELECT note.note_id, title, text, tag.name FROM note
-# #         JOIN (tagmap JOIN tag ON tagmap.tag_id = tag.tag_id)
-# #         ON note.note_id = tagmap.note_id
-# #         WHERE note.note_id = ?""",
-# #         (note_id, )).fetchall() == [(note_id, "not stuff", "not things",
-# #                                      "tags"), (note_id, "not stuff",
-# #                                                "not things", "lessTags")])
+    note_db.update(1, title="Not", text="Today")
+    notes, tags, tagmaps = get_all_data(engine, note_db)
+    assert([(1, "Not", "Today")] == notes)
+    assert([(1, "tag1"),
+            (2, "tag2")] == tags)
+    assert([(1, 1), (1, 2)] == tagmaps)
