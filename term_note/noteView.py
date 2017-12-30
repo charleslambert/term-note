@@ -1,11 +1,9 @@
-from urwid import Frame, Text, Pile, LineBox, WidgetWrap, Edit, Filler, Columns, SimpleFocusListWalker, AttrMap, ListBox, connect_signal, Divider, BigText, BoxAdapter, SolidFill
-from itertools import chain, zip_longest
+from urwid import Frame, Text, Pile, LineBox, WidgetWrap, Edit, Filler, Columns, SimpleFocusListWalker, AttrMap, ListBox, connect_signal
 from noteDatabase import NoteDatabase
-import urwid
+from urwid import MainLoop, ExitMainLoop
 
+# from datetime import datetime
 
-from noteDatabase import note_record
-from datetime import datetime
 
 class NoteEdit(WidgetWrap):
     signals = ['added']
@@ -141,15 +139,18 @@ class NoteView(WidgetWrap):
         self.db = NoteDatabase()
         self.edit = NoteEdit(self.db)
         self.list = NoteList(self.db)
+
         connect_signal(self.edit, 'added', self.update_handler)
         connect_signal(self.list, 'activate', self.selection_handler)
         connect_signal(self.list, 'create', self.creation_handler)
         connect_signal(self.list, 'delete', self.deletion_handler)
+
         colm = Columns([LineBox(self.list),  LineBox(self.edit)])
 
         # Adjust column size
         colm.contents[0] = (colm.contents[0][0], ('weight', 0.38, False))
         colm.options()
+
         self.colm = colm
         frame = Frame(LineBox(self.colm), footer=Text(['Enter to save (',
                                                        ('attr1', 'o'),
@@ -188,7 +189,7 @@ class NoteView(WidgetWrap):
                 self.colm[1].new_note = False
 
         if key == 'ctrl x':
-            raise urwid.ExitMainLoop()
+            raise ExitMainLoop()
 
         if key == 'l':
             try:
@@ -205,5 +206,5 @@ palette = [
 ]
 
 
-loop = urwid.MainLoop(NoteView(), palette=palette)
+loop = MainLoop(NoteView(), palette=palette)
 loop.run()

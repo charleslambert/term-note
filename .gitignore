@@ -14,3 +14,4 @@ cov.xml
 .mypy_cache
 .cache
 .coverage
+note.db
