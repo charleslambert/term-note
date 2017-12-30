@@ -1,11 +1,17 @@
 from datetime import datetime
 from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData, ForeignKey, DateTime
-from sqlalchemy import select, func
+from sqlalchemy import select
+from collections import namedtuple
+
+
+note_record = namedtuple(
+    'note_record', ['id', 'title', 'text', 'created', 'modified'])
 
 
 class NoteDatabase:
-    def __init__(self, engine=create_engine('sqlite:///note.db:', echo=True)):
+    def __init__(self, engine=create_engine('sqlite:///note.db')):
         self.engine = engine
+        self.create_tables()
 
     def create_tables(self):
         """Generate tables"""
@@ -108,3 +114,7 @@ class NoteDatabase:
             u = self.note.update().where(self.note.c.id == id)
             conn.execute(u, kwargs)
 
+    def notes(self):
+        s = select([self.note])
+        with self.engine.begin() as conn:
+            return list(map(lambda x: note_record(*x), conn.execute(s).fetchall()))

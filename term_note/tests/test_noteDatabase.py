@@ -122,3 +122,16 @@ def test_update_note(note_db, engine):
     assert([(1, "tag1"),
             (2, "tag2")] == tags)
     assert([(1, 1), (1, 2)] == tagmaps)
+
+
+def test_notes(note_db, engine):
+    note = note_db.note.insert()
+
+    with engine.begin() as conn:
+        conn.execute(note, id=1, title="hello",
+                     text="world",
+                     created=datetime(1, 1, 1),
+                     modified=datetime(1, 1, 1))
+
+    assert([(1, 'hello', 'world', datetime(1, 1, 1),
+             datetime(1, 1, 1))] == note_db.notes())
