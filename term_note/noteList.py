@@ -32,7 +32,7 @@ class NoteList(WidgetWrap):
 
         initial_list= self._w.body
         if len(initial_list) > 0:
-            self._emit('item focused', initial_list[0].note )
+            self._emit('item focused', initial_list[0].base_widget.note )
 
     def create_widget_list(self):
         wlist = map(lambda x: listItem(x), self.notes)
@@ -46,23 +46,29 @@ class NoteList(WidgetWrap):
         updated_list = self.create_widget_list()
         self._w.body[:] = updated_list
 
+
+    def focused(self):
+        self._emit('item focused', self._w.focus.base_widget.note)
+
     def keypress(self, size, key):
         if key == 'j':
             try:
                 self._w.focus_position += 1
-                self._emit('item focused', self._w.focus.base_widget.note)
+                self.focused()
             except IndexError:
                 pass
 
         elif key == 'k':
             try:
                 self._w.focus_position -= 1
-                self._emit('item focused', self._w.focus.base_widget.note)
+                self.focused()
             except IndexError:
                 pass
 
         elif key in ('enter', 'l'):
-            self._emit('selected', self._w.focus.base_widget.note)
+            focused_widget = self._w.focus
+            if focused_widget:
+                self._emit('selected', focused_widget.base_widget.note)
 
         elif key == 'right':
             return None
