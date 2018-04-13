@@ -4,6 +4,8 @@ from sqlalchemy import select
 from collections import namedtuple
 
 
+
+
 note_record = namedtuple(
     'note_record', ['id', 'title', 'text', 'created', 'modified'])
 
@@ -20,7 +22,7 @@ class NoteDatabase:
         self.note = Table('note',
                           metadata,
                           Column('id', Integer, primary_key=True),
-                          Column('title', String),
+                         Column('title', String),
                           Column('text', String),
                           Column('created', DateTime),
                           Column('modified', DateTime))

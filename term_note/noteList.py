@@ -4,10 +4,18 @@ from urwid import Text, SimpleFocusListWalker, ListBox, WidgetWrap, AttrMap, Lin
 class listItem(Text):
     def __init__(self, note):
         self.note = note
-        text = "{}\n{}\n{}".format(note.title, note.text[:20] + '...'
-                                   if len(note.text) > 20 else note.text,
+        Text.__init__(self, self.format_note(self.note))
+
+    def truncate(self, string, length):
+        if len(string) > length:
+            return string[:20] + '...'
+        else:
+            return string
+
+    def format_note(self, note):
+        return "{}\n{}\n{}".format(self.truncate(note.title, 20),
+                                   self.truncate(note.text, 20),
                                    note.created.date())
-        Text.__init__(self, text)
 
     def keypress(self, size, key):
         return key
@@ -30,9 +38,9 @@ class NoteList(WidgetWrap):
 
         WidgetWrap.__init__(self, self.list)
 
-        initial_list= self._w.body
+        initial_list = self._w.body
         if len(initial_list) > 0:
-            self._emit('item focused', initial_list[0].base_widget.note )
+            self._emit('item focused', initial_list[0].base_widget.note)
 
     def create_widget_list(self):
         wlist = map(lambda x: listItem(x), self.notes)
@@ -46,24 +54,26 @@ class NoteList(WidgetWrap):
         updated_list = self.create_widget_list()
         self._w.body[:] = updated_list
 
-
     def focused(self):
         self._emit('item focused', self._w.focus.base_widget.note)
 
+    def attempt_move(self, n, direction):
+        try:
+            if direction == "pos":
+                self._w.focus_position += 1
+            else:
+                self._w.focus_position -= 1
+
+            self.focused()
+        except IndexError:
+            pass
+
     def keypress(self, size, key):
         if key == 'j':
-            try:
-                self._w.focus_position += 1
-                self.focused()
-            except IndexError:
-                pass
+            self.attempt_move(1, "pos")
 
         elif key == 'k':
-            try:
-                self._w.focus_position -= 1
-                self.focused()
-            except IndexError:
-                pass
+            self.attempt_move(1, "neg")
 
         elif key in ('enter', 'l'):
             focused_widget = self._w.focus
@@ -78,8 +88,7 @@ class NoteList(WidgetWrap):
 
         elif key == 'd':
             if len(self.list.body) > 0:
-                self._emit('delete',
-                           self._w.focus.base_widget.note.id)
+                self._emit('delete', self._w.focus.base_widget.note.id)
 
         super(NoteList, self).keypress(size, key)
         return key
